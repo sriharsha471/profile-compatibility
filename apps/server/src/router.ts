@@ -1,8 +1,9 @@
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { analyzeDocuments } from './services/ai.service';
 import { extractTextFromPDF } from './services/pdf.service';
 import { rateLimiter } from './utils/rateLimit';
+import { detetmineAiModel } from './factory/ai.factory';
+import { AiModel } from './models/enum/models.enum';
 
 const t = initTRPC.create();
 
@@ -17,6 +18,7 @@ export const appRouter = t.router({
       z.object({
         cvBase64: z.string().min(1, 'CV is required'),
         jobDescriptionBase64: z.string().min(1, 'Job description is required'),
+        model: z.enum(['gemini']).default('gemini'),
       })
     )
     .mutation(async ({ input }) => {
@@ -45,7 +47,7 @@ export const appRouter = t.router({
         }
 
         // Analyze with AI
-        const analysis = await analyzeDocuments(cvText, jobDescriptionText);
+        const analysis = await detetmineAiModel(cvText, jobDescriptionText, input.model as AiModel);
 
         return {
           success: true,
